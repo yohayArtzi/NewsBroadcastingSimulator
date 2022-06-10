@@ -20,23 +20,30 @@ public:
     }
 
     // atomic insert
-    void insert (char *s){
+    void insert (string str){
         mtx.lock();
-        this->q.push(s);
+        this->q.push(str);
         mtx.unlock();
         sem_post(&this->full);
     }
 
     // atomic remove
-    char* remove () {
+    string remove () {
         sem_wait(&this->full);
         mtx.lock();
-        string str = q.front();
+        string str = this->q.front();
         this->q.pop();
         mtx.unlock();
 
-        // return after converting string to char*
-        return &str[0];
+        return str;
+    }
+
+    string front (){
+        mtx.lock();
+        string str = this->q.front();
+        mtx.unlock();
+
+        return str;
     }
 };
 
