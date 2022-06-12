@@ -12,13 +12,13 @@ using namespace std;
 
 void checkInputScanning(vector<int> id, vector<int> cap, vector<int> size, int ce);
 
-void for_tests();
+void testsZone();
 
 void produce(int id, int amount, int size);
 
 string create_article(int id, const char **cat, int *counters);
 
-void addToCoEditor(string article);
+void addToDispatcher(string article);
 
 void dispatch();
 
@@ -108,7 +108,7 @@ int main() {
     cout << "weather produced " << arr[2] << ", delivered " << w << endl;
 
     cout << "----------FINISHED MAIN----------" << endl;
-    //for_tests();
+    //testsZone();
 
     return 0;
 }
@@ -137,8 +137,6 @@ void display() {
 void coeditor(int i) {
     cout<<"**** inside co-editor ****"<<endl;
     while (DISPATCHER.size() < 3);
-    if (i == 2)
-        int j = 4;
     string article = DISPATCHER[i]->remove();
     while (article.compare("DONE") != 0) {
         sleep(0.1);
@@ -150,8 +148,8 @@ void coeditor(int i) {
     return;
 }
 
-// add article to appropriate co-editor queue
-void addToCoEditor(string article) {
+// add article to appropriate dispatcher's queue
+void addToDispatcher(string article) {
     while(DISPATCHER.size() < 3);
 
     // check if article belongs to SPORTS
@@ -193,11 +191,12 @@ void dispatch() {
     int not_done = 1;
     while (not_done) {
         not_done = 0;
-        for (int i = 0; i < PRODUCERS.size(); i++) {
+        while(PRODUCERS.size() < num_of_producers);
+        for (int i = 0; i < num_of_producers; i++) {
             string article = PRODUCERS[i]->remove();
             if (article.compare("DONE") != 0) {
                 not_done = 1;
-                addToCoEditor(article);
+                addToDispatcher(article);
             } else
                 PRODUCERS[i]->insert(article);
         }
@@ -262,29 +261,7 @@ void checkInputScanning(vector<int> id, vector<int> cap, vector<int> size, int c
     cout << "----- finished checkInputScanning -----" << endl;
 }
 
-void for_tests() {
+void testsZone() {
     cout << "----- TESTS ZONE -----" << endl;
-
-/*
-    // article creation tests
-    const char *categories[3] = {"SPORTS", "NEWS", "WEATHER"};
-    int counters[3] = {0, 0, 0};
-    for (int i = 0; i < 18; i++)
-        create_article(15, categories, counters);
-    create_article(-1, categories, counters);
-
-    // queue's test
-    BoundedQueue q(15);
-    for (int i = 0; i < 15; i++) {
-        string str = "Element ";
-        str.append(to_string(i));
-        cout << str << endl;
-        q.insert(str);
-    }
-
-    for (int i = 0; i < 15; i++) {
-        cout << q.remove() << endl;
-
-*/
-
+    return;
 }
