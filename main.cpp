@@ -115,6 +115,7 @@ int main() {
 
 // display articles to the screen
 void display() {
+    cout<<"**** inside display ****"<<endl;
     int doneCounter = 0;
     string article = COEDITORS->remove();
     while (true) {
@@ -134,6 +135,7 @@ void display() {
 
 // move articles from dispatcher's queues to co-editors queue
 void coeditor(int i) {
+    cout<<"**** inside co-editor ****"<<endl;
     while (DISPATCHER.size() < 3);
     if (i == 2)
         int j = 4;
@@ -150,6 +152,8 @@ void coeditor(int i) {
 
 // add article to appropriate co-editor queue
 void addToCoEditor(string article) {
+    while(DISPATCHER.size() < 3);
+
     // check if article belongs to SPORTS
     size_t found = article.find("SPORTS");
     if (found != string::npos) {
@@ -177,6 +181,7 @@ void addToCoEditor(string article) {
 }
 
 void dispatch() {
+    cout<<"**** inside dispatch ****"<<endl;
     // create queue for every category
     UnboundedQueue *sports = new UnboundedQueue;
     UnboundedQueue *news = new UnboundedQueue;
