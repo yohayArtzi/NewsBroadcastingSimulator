@@ -3,6 +3,6 @@ project(ex3)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ex3 main.cpp BoundedQueue.h UnboundedQueue.h)
+add_executable(ex3 main.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
