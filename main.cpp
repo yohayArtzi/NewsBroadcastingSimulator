@@ -26,20 +26,12 @@ void coeditor(int i);
 
 void display();
 
-void test_producer_queue(BoundedQueue *q, int size) {
-    for (int i = 0; i < size; i++) {
-        cout << (*q).remove() << endl;
-    }
-}
-
 vector<BoundedQueue *> PRODUCERS;
 vector<UnboundedQueue *> DISPATCHER;
 BoundedQueue *COEDITORS;
-int s = 0;
-int n = 0;
-int w = 0;
-int arr[3];
 int num_of_producers;
+//int arr[3];
+
 
 int main() {
     vector<int> id;  // producer ID
@@ -70,19 +62,16 @@ int main() {
     }
     configStream.close();
 
-    checkInputScanning(id, amount, size, coEditor_size);
+    //checkInputScanning(id, amount, size, coEditor_size);
 
-    num_of_producers = id.size(); // for debug
-    cout << "after part 1" << endl;
-    //int totalProducts=0;
+    num_of_producers = id.size();
+
     // create producers threads
     vector<thread> producersThreads;
-    for (int i = 0; i < id.size(); i++) {
+    for (int i = 0; i < num_of_producers; i++) {
         thread producer(produce, id[i], amount[i], size[i]);
         producersThreads.push_back(move(producer));
-        //totalProducts+=amount[i];
     }
-    cout << "after part 2" << endl;
 
     thread dispatcher(dispatch);
 
@@ -92,7 +81,6 @@ int main() {
     thread coeditor3(coeditor, 2);
     thread screenManager(display);
 
-    cout << "after part 3" << endl;
     // wait to other threads to complete
     for (int i = 0; i < producersThreads.size(); i++)
         producersThreads[i].join();
@@ -103,19 +91,29 @@ int main() {
     screenManager.join();
 
     // check balance produced/delivered
-    cout << "sports article produced " << arr[0] << ", delivered " << s << endl;
+/*    cout << "sports article produced " << arr[0] << ", delivered " << s << endl;
     cout << "news produced " << arr[1] << ", delivered " << n << endl;
     cout << "weather produced " << arr[2] << ", delivered " << w << endl;
 
-    cout << "----------FINISHED MAIN----------" << endl;
+    cout << "----------FINISHED MAIN----------" << endl;*/
     //testsZone();
 
     return 0;
 }
 
+void deleteGlobalMem(){
+    for(int i=0;i<num_of_producers;i++){
+        delete PRODUCERS[i];
+    }
+    for(int i=0; i<3;i++){
+        delete DISPATCHER[i];
+    }
+    delete COEDITORS;
+}
+
 // display articles to the screen
 void display() {
-    cout<<"**** inside display ****"<<endl;
+    //cout<<"**** inside display ****"<<endl;
     int doneCounter = 0;
     string article = COEDITORS->remove();
     while (true) {
@@ -128,23 +126,29 @@ void display() {
             break;
         article = COEDITORS->remove();
     }
-    cout << "DONES: " << doneCounter << endl;
-    cout << "in display: finished" << endl;
+    cout<<"DONE"<<endl;
+    //void deleteGlobalMem();
+
+    //cout << "DONES: " << doneCounter << endl;
+    //cout << "in display: finished" << endl;
     return;
 }
 
 // move articles from dispatcher's queues to co-editors queue
 void coeditor(int i) {
-    cout<<"**** inside co-editor ****"<<endl;
+    //cout<<"**** inside co-editor ****"<<endl;
     while (DISPATCHER.size() < 3);
+    //cout<<"after waiting to all dispatchers"<<endl;
     string article = DISPATCHER[i]->remove();
+    //cout<<"COEDITOR "<<i<<" first article"<<endl;
     while (article.compare("DONE") != 0) {
-        sleep(0.1);
+        sleep(0.1);  // simulating editing process
+        //cout<<"ARTICLE "<<article<< " moved to"<<endl;
         COEDITORS->insert(article);
         article = DISPATCHER[i]->remove();
     }
     COEDITORS->insert("DONE");
-    cout << "in coeditor " << i << ": finished" << endl;
+    //cout << "in coeditor " << i << ": finished" << endl;
     return;
 }
 
@@ -156,30 +160,27 @@ void addToDispatcher(string article) {
     size_t found = article.find("SPORTS");
     if (found != string::npos) {
         DISPATCHER[0]->insert(article);
-        cout << "Inserted to the \"S dispatcher queue\"" << endl;
-        s++;
+        //cout << "Inserted to the \"S dispatcher queue\"" << endl;
         return;
     }
     // check if article belongs to NEWS
     found = article.find("NEWS");
     if (found != string::npos) {
         DISPATCHER[1]->insert(article);
-        cout << "Inserted to the \"N dispatcher queue\"" << endl;
-        n++;
+        //cout << "Inserted to the \"N dispatcher queue\"" << endl;
         return;
     }
     // check if article belongs to WEATHER
     found = article.find("WEATHER");
     if (found != string::npos) {
         DISPATCHER[2]->insert(article);
-        cout << "Inserted to the \"W dispatcher queue\"" << endl;
-        w++;
+        //cout << "Inserted to the \"W dispatcher queue\"" << endl;
     }
     return;
 }
 
 void dispatch() {
-    cout<<"**** inside dispatch ****"<<endl;
+    //cout<<"**** inside dispatch ****"<<endl;
     // create queue for every category
     UnboundedQueue *sports = new UnboundedQueue;
     UnboundedQueue *news = new UnboundedQueue;
@@ -201,11 +202,11 @@ void dispatch() {
                 PRODUCERS[i]->insert(article);
         }
     }
-    // add an "DONE" at the end of every co-editor queue
+    // add an "DONE" at the end of every dispatcher queue
     for (int i = 0; i < 3; i++) {
         DISPATCHER[i]->insert("DONE");
     }
-    cout << "in dispatch: finished" << endl;
+    //cout << "in dispatch: finished" << endl;
     return;
 }
 
@@ -217,22 +218,19 @@ void produce(int id, int amount, int size) {
     int counters[3] = {0, 0, 0};
     for (int i = 0; i < amount; i++) {
         (*bq).insert(create_article(id, categories, counters));
-        if (i == 0)
-            cout << "producer " << id << " produced his first product" << endl;
+/*        if (i == 0)
+            cout << "producer " << id << " produced his first product" << endl;*/
     }
     (*bq).insert("DONE");
 
-    //for debug:
-
-    //test_producer_queue(bq, size);
-    if (num_of_producers - 1 == id)
-        cout << "in produce: finished" << endl;
+/*    if (num_of_producers - 1 == id)
+        cout << "in produce: finished" << endl;*/
 }
 
 // create single article randomly
 string create_article(int id, const char **cat, int *counters) {
     int random = rand() % 3;
-    arr[random]++;
+    //arr[random]++;
 
     string str = "Producer ";
     str.append(to_string(id));
@@ -246,6 +244,7 @@ string create_article(int id, const char **cat, int *counters) {
     return str;
 }
 
+// check scanning of input
 void checkInputScanning(vector<int> id, vector<int> cap, vector<int> size, int ce) {
     if (id.size() != cap.size() && id.size() != size.size())
         cout << "size problem" << endl;
