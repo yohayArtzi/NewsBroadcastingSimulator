@@ -122,7 +122,8 @@ void display() {
             cout << article << endl;
             article = COEDITORS->remove();
         }
-        if(doneCounter == 2)
+        doneCounter++;
+        if(doneCounter == 3)
             break;
         article = COEDITORS->remove();
     }
