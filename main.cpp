@@ -95,26 +95,33 @@ void checkInputScanning(vector<int> id, vector<int> cap, vector<int> size, int c
 
 void testsZone();
 
-void produce(int id, int amount, int size);
+void produce(BoundedQueue *bq, int id, int amount);
 
 string create_article(int id, const char **cat, int *counters);
 
 void addToDispatcher(string article);
 
-void dispatch();
+void dispatch(vector<BoundedQueue *> PRODUCERS,
+              vector<UnboundedQueue *> DISPATCHER, int num_of_producers);
 
-void coeditor(int i);
+void coeditor(vector<UnboundedQueue *> DISPATCHER, BoundedQueue *COEDITORS, int i);
 
-void display();
+void display(BoundedQueue *COEDITORS, int num_of_producers, vector<BoundedQueue *> PRODUCERS,
+             vector<UnboundedQueue *> DISPATCHER);
 
-vector<BoundedQueue *> PRODUCERS;
-vector<UnboundedQueue *> DISPATCHER;
-BoundedQueue *COEDITORS;
-int num_of_producers;
+void deleteAllocatedMem(int num_of_producers, vector<BoundedQueue *> PRODUCERS,
+                        vector<UnboundedQueue *> DISPATCHER, BoundedQueue *COEDITORS);
+
+
 //int arr[3];
 
 
 int main() {
+    vector<BoundedQueue *> PRODUCERS;
+    vector<UnboundedQueue *> DISPATCHER;
+    BoundedQueue *COEDITORS;
+    int num_of_producers;
+
     vector<int> id;  // producer ID
     vector<int> amount;  // amount of products to make
     vector<int> size;  // size fo producer's queue
@@ -147,20 +154,32 @@ int main() {
 
     num_of_producers = id.size();
 
+    // initialize producers queues
+    for (int i = 0; i < num_of_producers; i++) {
+        BoundedQueue *bq = new BoundedQueue(size[i]);
+        PRODUCERS.push_back(bq);
+    }
     // create producers threads
     vector<thread> producersThreads;
     for (int i = 0; i < num_of_producers; i++) {
-        thread producer(produce, id[i], amount[i], size[i]);
+        thread producer(produce, PRODUCERS[i], id[i], amount[i]);
         producersThreads.push_back(move(producer));
     }
+    // initialize dispatcher's queues
+    UnboundedQueue *sports = new UnboundedQueue;
+    UnboundedQueue *news = new UnboundedQueue;
+    UnboundedQueue *weather = new UnboundedQueue;
+    DISPATCHER.push_back(sports);
+    DISPATCHER.push_back(news);
+    DISPATCHER.push_back(weather);
+    thread dispatcher(dispatch, PRODUCERS, DISPATCHER, num_of_producers);
 
-    thread dispatcher(dispatch);
-
+    // initialize co-editors queue
     COEDITORS = new BoundedQueue(coEditor_size);
-    thread coeditor1(coeditor, 0);
-    thread coeditor2(coeditor, 1);
-    thread coeditor3(coeditor, 2);
-    thread screenManager(display);
+    thread coeditor1(coeditor, DISPATCHER, COEDITORS, 0);
+    thread coeditor2(coeditor, DISPATCHER, COEDITORS, 1);
+    thread coeditor3(coeditor, DISPATCHER, COEDITORS, 2);
+    thread screenManager(display, COEDITORS, num_of_producers, PRODUCERS, DISPATCHER);
 
     // wait to other threads to complete
     for (int i = 0; i < producersThreads.size(); i++)
@@ -182,7 +201,8 @@ int main() {
     return 0;
 }
 
-void deleteGlobalMem(){
+void deleteAllocatedMem(int num_of_producers, vector<BoundedQueue *> PRODUCERS,
+                        vector<UnboundedQueue *> DISPATCHER, BoundedQueue *COEDITORS){
     for(int i=0;i<num_of_producers;i++){
         delete PRODUCERS[i];
     }
@@ -193,7 +213,8 @@ void deleteGlobalMem(){
 }
 
 // display articles to the screen
-void display() {
+void display(BoundedQueue *COEDITORS, int num_of_producers, vector<BoundedQueue *> PRODUCERS,
+             vector<UnboundedQueue *> DISPATCHER) {
     //cout<<"**** inside display ****"<<endl;
     int doneCounter = 0;
     string article = COEDITORS->remove();
@@ -208,7 +229,7 @@ void display() {
         article = COEDITORS->remove();
     }
     cout<<"DONE"<<endl;
-    //void deleteGlobalMem();
+    deleteAllocatedMem(num_of_producers, PRODUCERS, DISPATCHER, COEDITORS);
 
     //cout << "DONES: " << doneCounter << endl;
     //cout << "in display: finished" << endl;
@@ -216,7 +237,7 @@ void display() {
 }
 
 // move articles from dispatcher's queues to co-editors queue
-void coeditor(int i) {
+void coeditor(vector<UnboundedQueue *> DISPATCHER, BoundedQueue *COEDITORS, int i) {
     //cout<<"**** inside co-editor ****"<<endl;
     while (DISPATCHER.size() < 3);
     //cout<<"after waiting to all dispatchers"<<endl;
@@ -234,7 +255,7 @@ void coeditor(int i) {
 }
 
 // add article to appropriate dispatcher's queue
-void addToDispatcher(string article) {
+void addToDispatcher(vector<UnboundedQueue *> DISPATCHER, string article) {
     while(DISPATCHER.size() < 3);
 
     // check if article belongs to SPORTS
@@ -260,25 +281,26 @@ void addToDispatcher(string article) {
     return;
 }
 
-void dispatch() {
+void dispatch(vector<BoundedQueue *> PRODUCERS, vector<UnboundedQueue *> DISPATCHER, int num_of_producers) {
     //cout<<"**** inside dispatch ****"<<endl;
     // create queue for every category
-    UnboundedQueue *sports = new UnboundedQueue;
-    UnboundedQueue *news = new UnboundedQueue;
-    UnboundedQueue *weather = new UnboundedQueue;
-    DISPATCHER.push_back(sports);
-    DISPATCHER.push_back(news);
-    DISPATCHER.push_back(weather);
+    //UnboundedQueue *sports = new UnboundedQueue;
+    //UnboundedQueue *news = new UnboundedQueue;
+    //UnboundedQueue *weather = new UnboundedQueue;
+    //DISPATCHER.push_back(sports);
+    //DISPATCHER.push_back(news);
+    //DISPATCHER.push_back(weather);
 
     int not_done = 1;
     while (not_done) {
         not_done = 0;
-        while(PRODUCERS.size() < num_of_producers);
-        for (int i = 0; i < num_of_producers; i++) {
+        //while(PRODUCERS.size() < num_of_producers);
+        //int n = PRODUCERS.size();
+        for (int i = 0; i < PRODUCERS.size(); i++) {
             string article = PRODUCERS[i]->remove();
             if (article.compare("DONE") != 0) {
                 not_done = 1;
-                addToDispatcher(article);
+                addToDispatcher(DISPATCHER, article);
             } else
                 PRODUCERS[i]->insert(article);
         }
@@ -292,9 +314,9 @@ void dispatch() {
 }
 
 // produce all products for a single producer
-void produce(int id, int amount, int size) {
-    BoundedQueue *bq = new BoundedQueue(size);
-    PRODUCERS.push_back(bq);
+void produce(BoundedQueue *bq, int id, int amount) {
+    //BoundedQueue *bq = new BoundedQueue(size);
+    //PRODUCERS.push_back(bq);
     const char *categories[3] = {"SPORTS", "NEWS", "WEATHER"};
     int counters[3] = {0, 0, 0};
     for (int i = 0; i < amount; i++) {
